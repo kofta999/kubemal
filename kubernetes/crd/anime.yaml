@@ -16,6 +16,7 @@ spec:
       schema:
         openAPIV3Schema:
           type: object
+          required: ["englishTitle"]
           properties:
             spec:
               type: object
@@ -28,4 +29,4 @@ spec:
                   type: integer
                 airingStatus:
                   type: string
-                  enum: ["NotYetAired", "Airing", "Aired"]
+                  enum: ["NotYetAired", "Airing", "Finished"]

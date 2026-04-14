@@ -13,16 +13,16 @@ use schemars::JsonSchema;
 #[serde(rename_all = "camelCase")]
 pub struct AnimeSpec {
     pub english_title: String,
-    pub japanese_title: String,
-    pub total_episodes: i32,
-    pub airing_status: AiringStatus,
+    pub japanese_title: Option<String>,
+    pub total_episodes: Option<i32>,
+    pub airing_status: Option<AiringStatus>,
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone, JsonSchema)]
 pub enum AiringStatus {
     NotYetAired,
     Airing,
-    Aired,
+    Finished,
 }
 
 #[derive(CustomResource, Serialize, Deserialize, Debug, Clone, JsonSchema)]
