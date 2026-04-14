@@ -1,0 +1,31 @@
+apiVersion: apiextensions.k8s.io/v1
+kind: CustomResourceDefinition
+metadata:
+  name: animes.kubemal.kofta.app
+spec:
+  group: kubemal.kofta.app
+  scope: Namespaced
+  names:
+    kind: Anime
+    plural: animes
+    singular: anime
+  versions:
+    - name: v1
+      served: true
+      storage: true
+      schema:
+        openAPIV3Schema:
+          type: object
+          properties:
+            spec:
+              type: object
+              properties:
+                englishTitle:
+                  type: string
+                japaneseTitle:
+                  type: string
+                totalEpisodes:
+                  type: integer
+                airingStatus:
+                  type: string
+                  enum: ["NotYetAired", "Airing", "Aired"]
