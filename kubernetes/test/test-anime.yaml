@@ -1,0 +1,5 @@
+apiVersion: kubemal.kofta.app/v1
+kind: Anime
+metadata:
+  name: tonari-no-tenshi
+spec: {}

@@ -12,7 +12,7 @@ use schemars::JsonSchema;
 )]
 #[serde(rename_all = "camelCase")]
 pub struct AnimeSpec {
-    pub english_title: String,
+    pub english_title: Option<String>,
     pub japanese_title: Option<String>,
     pub total_episodes: Option<i32>,
     pub airing_status: Option<AiringStatus>,

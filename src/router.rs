@@ -6,7 +6,20 @@ use kube::{
     core::admission::{AdmissionRequest, AdmissionResponse, AdmissionReview, Operation},
 };
 
-const JIKAN_URL: &str = "https://api.jikan.moe/v4";
+const ANILIST_URL: &str = "https://graphql.anilist.co";
+const ANILIST_MEDIA_QUERY: &str = r#"
+query ($search: String) {
+  Media(search: $search, type: ANIME) {
+    title {
+      english
+      romaji
+      native
+    }
+    episodes
+    status
+  }
+}
+"#;
 
 pub fn create_router() -> Router {
     Router::new().route("/mutate", post(mutation_handler))
@@ -29,8 +42,8 @@ async fn mutation_handler(
     let mut resp = AdmissionResponse::from(&req);
 
     if req.operation == Operation::Create
-        && let Some(obj) = req.object.as_ref()
-        && let Some(new_spec) = fetch_anime_details(&obj.spec.english_title).await
+        && let Some(obj) = req.object
+        && let Some(new_spec) = fetch_anime_details(&obj.metadata.name.unwrap()).await
     {
         let patch_value = serde_json::json!([
             { "op": "replace", "path": "/spec/englishTitle", "value": new_spec.english_title },
@@ -45,36 +58,40 @@ async fn mutation_handler(
     }
 
     let review = resp.into_review();
+
     Json(review)
 }
 
 pub async fn fetch_anime_details(english_title: &str) -> Option<AnimeSpec> {
-    let url = reqwest::Url::parse_with_params(
-        format!("{JIKAN_URL}/anime").as_str(),
-        &[("q", english_title), ("limit", "1")],
-    )
-    .ok()?;
-
-    let json = reqwest::get(url)
+    let client = reqwest::Client::new();
+    let json = client
+        .post(ANILIST_URL)
+        .header("Content-Type", "application/json")
+        .header("Accept", "application/json")
+        .json(&serde_json::json!({
+            "query": ANILIST_MEDIA_QUERY,
+            "variables": { "search": english_title }
+        }))
+        .send()
         .await
         .ok()?
         .json::<serde_json::Value>()
         .await
         .ok()?;
 
+    let media = &json["data"]["Media"];
+    let english = media["title"]["english"].as_str();
+    let romaji = media["title"]["romaji"].as_str();
+    let native = media["title"]["native"].as_str();
+
     Some(AnimeSpec {
-        english_title: json["data"][0]["title_english"]
-            .as_str()
-            .unwrap_or(english_title)
-            .to_string(),
-        japanese_title: json["data"][0]["title_japanese"]
-            .as_str()
-            .map(|s| s.to_string()),
-        total_episodes: json["data"][0]["episodes"].as_i64().map(|x| x as i32),
-        airing_status: match json["data"][0]["status"].as_str() {
-            Some("Currently Airing") => Some(AiringStatus::Airing),
-            Some("Finished Airing") => Some(AiringStatus::Finished),
-            Some("Not yet aired") => Some(AiringStatus::NotYetAired),
+        english_title: Some(english.or(romaji).unwrap_or(english_title).to_string()),
+        japanese_title: native.map(|s| s.to_string()),
+        total_episodes: media["episodes"].as_i64().map(|x| x as i32),
+        airing_status: match media["status"].as_str() {
+            Some("RELEASING") => Some(AiringStatus::Airing),
+            Some("FINISHED") => Some(AiringStatus::Finished),
+            Some("NOT_YET_RELEASED") => Some(AiringStatus::NotYetAired),
             _ => None,
         },
     })
