@@ -1,28 +1,67 @@
-use crate::crd::{AiringStatus, Anime, AnimeSpec};
+use crate::{
+    anime_api,
+    crd::{Anime, WatchRecord},
+};
 use axum::{Json, Router, extract, routing::post};
 use json_patch::Patch;
 use kube::{
+    Api, Client,
     api::DynamicObject,
     core::admission::{AdmissionRequest, AdmissionResponse, AdmissionReview, Operation},
 };
 
-const ANILIST_URL: &str = "https://graphql.anilist.co";
-const ANILIST_MEDIA_QUERY: &str = r#"
-query ($search: String) {
-  Media(search: $search, type: ANIME) {
-    title {
-      english
-      romaji
-      native
-    }
-    episodes
-    status
-  }
-}
-"#;
+pub async fn create_router() -> Router {
+    let client = Client::try_default().await.unwrap();
+    let state = client;
 
-pub fn create_router() -> Router {
-    Router::new().route("/mutate", post(mutation_handler))
+    Router::new()
+        .route("/mutate", post(mutation_handler))
+        .route("/validate", post(validation_handler))
+        .with_state(state)
+}
+
+async fn validation_handler(
+    extract::State(client): extract::State<Client>,
+    extract::Json(payload): extract::Json<AdmissionReview<WatchRecord>>,
+) -> Json<AdmissionReview<DynamicObject>> {
+    let req: AdmissionRequest<WatchRecord> = match payload.try_into() {
+        Ok(r) => r,
+        Err(e) => {
+            let rev = AdmissionResponse::invalid(e.to_string()).into_review();
+            return Json(rev);
+        }
+    };
+
+    let mut resp = AdmissionResponse::from(&req);
+
+    if req.operation == Operation::Create
+        && let Some(obj) = req.object
+        && let Some(anime) = Api::<Anime>::namespaced(
+            client.clone(),
+            &obj.metadata.namespace.unwrap_or("default".to_string()),
+        )
+        .get(&obj.spec.anime_ref.name)
+        .await
+        .ok()
+    {
+        let watched_eps = obj.spec.episodes_watched;
+        let anime_eps = anime.spec.total_episodes.expect("Must be there");
+
+        if watched_eps <= 0 {
+            resp = resp.deny("Total episodes is less or equal than zero")
+        }
+
+        if watched_eps > anime_eps {
+            resp = resp.deny(format!(
+                "Total episodes {} is more than anime episodes {}",
+                watched_eps, anime_eps
+            ))
+        }
+    }
+
+    let review = resp.into_review();
+
+    Json(review)
 }
 
 async fn mutation_handler(
@@ -43,7 +82,7 @@ async fn mutation_handler(
 
     if req.operation == Operation::Create
         && let Some(obj) = req.object
-        && let Some(new_spec) = fetch_anime_details(&obj.metadata.name.unwrap()).await
+        && let Some(new_spec) = anime_api::fetch_anime_details(&obj.metadata.name.unwrap()).await
     {
         let patch_value = serde_json::json!([
             { "op": "replace", "path": "/spec/englishTitle", "value": new_spec.english_title },
@@ -60,39 +99,4 @@ async fn mutation_handler(
     let review = resp.into_review();
 
     Json(review)
-}
-
-pub async fn fetch_anime_details(english_title: &str) -> Option<AnimeSpec> {
-    let client = reqwest::Client::new();
-    let json = client
-        .post(ANILIST_URL)
-        .header("Content-Type", "application/json")
-        .header("Accept", "application/json")
-        .json(&serde_json::json!({
-            "query": ANILIST_MEDIA_QUERY,
-            "variables": { "search": english_title }
-        }))
-        .send()
-        .await
-        .ok()?
-        .json::<serde_json::Value>()
-        .await
-        .ok()?;
-
-    let media = &json["data"]["Media"];
-    let english = media["title"]["english"].as_str();
-    let romaji = media["title"]["romaji"].as_str();
-    let native = media["title"]["native"].as_str();
-
-    Some(AnimeSpec {
-        english_title: Some(english.or(romaji).unwrap_or(english_title).to_string()),
-        japanese_title: native.map(|s| s.to_string()),
-        total_episodes: media["episodes"].as_i64().map(|x| x as i32),
-        airing_status: match media["status"].as_str() {
-            Some("RELEASING") => Some(AiringStatus::Airing),
-            Some("FINISHED") => Some(AiringStatus::Finished),
-            Some("NOT_YET_RELEASED") => Some(AiringStatus::NotYetAired),
-            _ => None,
-        },
-    })
 }

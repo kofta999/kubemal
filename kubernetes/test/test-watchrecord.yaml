@@ -1,0 +1,10 @@
+apiVersion: kubemal.kofta.app/v1
+kind: WatchRecord
+metadata:
+  name: tonari-no-tenshi-watch-record
+spec:
+  username: kofta
+  episodesWatched: 99
+  score: 9
+  animeRef:
+    name: tonari-no-tenshi

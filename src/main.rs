@@ -1,3 +1,4 @@
+mod anime_api;
 mod crd;
 mod router;
 
@@ -5,7 +6,7 @@ mod router;
 async fn main() {
     let listener = tokio::net::TcpListener::bind("0.0.0.0:3000").await.unwrap();
 
-    axum::serve(listener, router::create_router())
+    axum::serve(listener, router::create_router().await)
         .await
         .unwrap();
 
