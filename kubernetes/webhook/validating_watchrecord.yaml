@@ -7,9 +7,9 @@ webhooks:
     admissionReviewVersions: ["v1"]
     sideEffects: None
     clientConfig:
-      url: "https://border-snap-plenty-expect.trycloudflare.com/validate"
+      url: "https://tackle-morrison-blackjack-inside.trycloudflare.com/validate"
     rules:
-      - operations: ["CREATE"]
+      - operations: ["CREATE", "UPDATE"]
         apiGroups: ["kubemal.kofta.app"]
         apiVersions: ["v1"]
         scope: Namespaced

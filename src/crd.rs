@@ -40,6 +40,14 @@ pub struct WatchRecordSpec {
     pub anime_ref: AnimeRef,
     pub episodes_watched: i32,
     pub score: u8,
+    pub status: Option<WatchSpecStatus>,
+}
+
+#[derive(Serialize, Deserialize, Debug, Clone, JsonSchema)]
+pub enum WatchSpecStatus {
+    Dropped,
+    PlanToWatch,
+    OnHold,
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone, JsonSchema)]
@@ -58,4 +66,16 @@ pub enum WatchState {
     Watching,
     Completed,
     Dropped,
+    PlanToWatch,
+    OnHold,
+}
+
+impl From<WatchSpecStatus> for WatchState {
+    fn from(value: WatchSpecStatus) -> Self {
+        match value {
+            WatchSpecStatus::Dropped => WatchState::Dropped,
+            WatchSpecStatus::PlanToWatch => WatchState::PlanToWatch,
+            WatchSpecStatus::OnHold => WatchState::OnHold,
+        }
+    }
 }

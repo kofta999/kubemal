@@ -1,17 +1,17 @@
 use crate::{
     anime_api,
     crd::{Anime, WatchRecord},
+    util,
 };
 use axum::{Json, Router, extract, routing::post};
 use json_patch::Patch;
 use kube::{
-    Api, Client,
+    Client,
     api::DynamicObject,
     core::admission::{AdmissionRequest, AdmissionResponse, AdmissionReview, Operation},
 };
 
-pub async fn create_router() -> Router {
-    let client = Client::try_default().await.unwrap();
+pub async fn create_router(client: Client) -> Router {
     let state = client;
 
     Router::new()
@@ -34,28 +34,22 @@ async fn validation_handler(
 
     let mut resp = AdmissionResponse::from(&req);
 
-    if req.operation == Operation::Create
+    if (req.operation == Operation::Create || req.operation == Operation::Update)
         && let Some(obj) = req.object
-        && let Some(anime) = Api::<Anime>::namespaced(
-            client.clone(),
-            &obj.metadata.namespace.unwrap_or("default".to_string()),
-        )
-        .get(&obj.spec.anime_ref.name)
-        .await
-        .ok()
+        && let Some(anime) = util::get_anime(&client, &obj).await
     {
         let watched_eps = obj.spec.episodes_watched;
         let anime_eps = anime.spec.total_episodes.expect("Must be there");
 
         if watched_eps <= 0 {
             resp = resp.deny("Total episodes is less or equal than zero")
-        }
-
-        if watched_eps > anime_eps {
+        } else if watched_eps > anime_eps {
             resp = resp.deny(format!(
                 "Total episodes {} is more than anime episodes {}",
                 watched_eps, anime_eps
             ))
+        } else if watched_eps == anime_eps && obj.spec.status.is_some() {
+            resp = resp.deny("Status set even the anime is completed")
         }
     }
 

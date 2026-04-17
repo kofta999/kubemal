@@ -13,3 +13,5 @@ serde_json = "1.0.149"
 axum = "0.8.9"
 reqwest = { version = "0.13.2", default-features = false, features = ["json", "rustls-no-provider"] }
 json-patch = "4.1.0"
+features = "0.10.0"
+futures = "0.3.32"
