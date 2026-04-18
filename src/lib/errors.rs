@@ -4,8 +4,10 @@ use thiserror::Error;
 pub enum ControllerError {
     #[error("Anime not found {0}")]
     AnimeNotFound(String),
-    #[error("Watch record' name attribute not found")]
+    #[error("Watch record's metadata.name attribute not found")]
     WatchRecordNameNotFound,
+    #[error("Watch record's metadata.namespace attribute not found")]
+    WatchRecordNamespaceNotFound,
     #[error("Couldn't update WatchRecord status")]
     StatusUpdate,
 }
@@ -26,9 +28,11 @@ pub enum ValidationError {
 
 #[derive(Error, Debug)]
 pub enum MutationError {
-    #[error("missing object name")]
+    #[error("Missing object name")]
     MissingName,
-    #[error("failed to apply patch: {0}")]
+    #[error("Failed to build JSON patch")]
+    InvalidPatch,
+    #[error("Failed to apply patch: {0}")]
     ApplyPatch(String),
     #[error("Anime associated with WatchRecord is not found")]
     AnimeNotFound,
@@ -40,4 +44,8 @@ pub enum AppError {
     Io(#[from] std::io::Error),
     #[error("Kubernetes client error: {0}")]
     Kube(#[from] kube::Error),
+    #[error("Controller task panicked or was cancelled: {0}")]
+    ControllerJoin(#[from] tokio::task::JoinError),
+    #[error("Controller task exited unexpectedly")]
+    ControllerStopped,
 }

@@ -6,16 +6,17 @@ use kube::{
     runtime::{controller::Action, watcher},
 };
 use std::{sync::Arc, time::Duration};
+use tokio::task::JoinHandle;
 use tracing::{debug, error, info, warn};
 
 pub struct Context {
     pub client: Client,
 }
 
-pub fn create_controller(client: Client) {
+pub fn create_controller(client: Client) -> JoinHandle<()> {
     info!("Initializing WatchRecord controller");
     let controller = kube::runtime::Controller::new(
-        Api::<WatchRecord>::default_namespaced(client.clone()),
+        Api::<WatchRecord>::all(client.clone()),
         watcher::Config::default(),
     );
     let context = Arc::new(Context { client });
@@ -34,7 +35,9 @@ pub fn create_controller(client: Client) {
                 }
             })
             .await;
-    });
+
+        error!("Controller stream ended unexpectedly");
+    })
 }
 
 pub async fn reconciler(
@@ -45,7 +48,7 @@ pub async fn reconciler(
         .metadata
         .namespace
         .clone()
-        .unwrap_or("default".to_string());
+        .ok_or(ControllerError::WatchRecordNamespaceNotFound)?;
 
     let anime = util::get_anime(&ctx.client, &obj)
         .await
@@ -71,7 +74,10 @@ pub async fn reconciler(
             &Patch::Merge(patch),
         )
         .await
-        .map_err(|_| ControllerError::StatusUpdate)?;
+        .map_err(|e| {
+            error!(error = %e, "Failed to patch WatchRecord status");
+            ControllerError::StatusUpdate
+        })?;
 
     debug!(namespace = %wr_namespace, "WatchRecord status patched");
 

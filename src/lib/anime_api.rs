@@ -1,4 +1,5 @@
 use crate::crd::{AiringStatus, AnimeSpec};
+use tracing::warn;
 
 const ANILIST_URL: &str = "https://graphql.anilist.co";
 const ANILIST_MEDIA_QUERY: &str = r#"
@@ -27,6 +28,10 @@ pub async fn fetch_anime_details(english_title: &str) -> Option<AnimeSpec> {
         }))
         .send()
         .await
+        .map_err(|e| {
+            warn!(error = %e, "AniList request failed");
+            e
+        })
         .ok()?
         .json::<serde_json::Value>()
         .await
