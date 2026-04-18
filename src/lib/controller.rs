@@ -6,12 +6,14 @@ use kube::{
     runtime::{controller::Action, watcher},
 };
 use std::{sync::Arc, time::Duration};
+use tracing::{debug, error, info, warn};
 
 pub struct Context {
     pub client: Client,
 }
 
 pub fn create_controller(client: Client) {
+    info!("Initializing WatchRecord controller");
     let controller = kube::runtime::Controller::new(
         Api::<WatchRecord>::default_namespaced(client.clone()),
         watcher::Config::default(),
@@ -21,7 +23,16 @@ pub fn create_controller(client: Client) {
     tokio::spawn(async move {
         controller
             .run(reconciler, error_policy, context)
-            .for_each(|_| async {})
+            .for_each(|event| async move {
+                match event {
+                    Ok((obj_ref, action)) => {
+                        debug!(?obj_ref, ?action, "Reconciled WatchRecord");
+                    }
+                    Err(err) => {
+                        error!(error = %err, "Controller reconcile loop failed");
+                    }
+                }
+            })
             .await;
     });
 }
@@ -36,12 +47,11 @@ pub async fn reconciler(
         .clone()
         .unwrap_or("default".to_string());
 
-    let anime =
-        util::get_anime(&ctx.client, &obj)
-            .await
-            .ok_or(ControllerError::AnimeNotFound(
-                obj.spec.anime_ref.clone().name,
-            ))?;
+    let anime = util::get_anime(&ctx.client, &obj)
+        .await
+        .ok_or(ControllerError::AnimeNotFound(
+            obj.spec.anime_ref.clone().name,
+        ))?;
 
     let total_eps = anime
         .spec
@@ -63,9 +73,17 @@ pub async fn reconciler(
         .await
         .map_err(|_| ControllerError::StatusUpdate)?;
 
+    debug!(namespace = %wr_namespace, "WatchRecord status patched");
+
     Ok(Action::requeue(Duration::from_secs(1800)))
 }
 
-fn error_policy(_: Arc<WatchRecord>, _: &ControllerError, _: Arc<Context>) -> Action {
+fn error_policy(obj: Arc<WatchRecord>, err: &ControllerError, _: Arc<Context>) -> Action {
+    warn!(
+        name = obj.metadata.name.as_deref().unwrap_or("<unknown>"),
+        namespace = obj.metadata.namespace.as_deref().unwrap_or("default"),
+        error = %err,
+        "Reconcile error; requeueing soon"
+    );
     Action::requeue(Duration::from_secs(5))
 }

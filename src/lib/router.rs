@@ -11,6 +11,7 @@ use kube::{
     api::DynamicObject,
     core::admission::{AdmissionRequest, AdmissionResponse, AdmissionReview, Operation},
 };
+use tracing::{error, info, warn};
 
 pub async fn create_router(client: Client) -> Router {
     let state = client;
@@ -28,6 +29,7 @@ async fn validation_handler(
     let req: AdmissionRequest<WatchRecord> = match payload.try_into() {
         Ok(r) => r,
         Err(e) => {
+            error!(error = %e, "Failed to parse validation admission review");
             let rev = AdmissionResponse::invalid(e.to_string()).into_review();
             return Json(rev);
         }
@@ -38,6 +40,7 @@ async fn validation_handler(
     if (req.operation == Operation::Create || req.operation == Operation::Update)
         && let Err(e) = validate_watch_record(req.object, &client).await
     {
+        warn!(error = %e, "Validation denied");
         resp = resp.deny(e.to_string());
     }
 
@@ -81,13 +84,20 @@ async fn mutation_handler(
     let req: AdmissionRequest<Anime> = match payload.try_into() {
         Ok(r) => r,
         Err(e) => {
+            error!(error = %e, "Failed to parse mutation admission review");
             return Json(AdmissionResponse::invalid(e.to_string()).into_review());
         }
     };
 
     let resp = match build_mutation_response(&req).await {
-        Ok(r) => r,
-        Err(e) => AdmissionResponse::invalid(e.to_string()),
+        Ok(r) => {
+            info!("Mutation patch generated");
+            r
+        }
+        Err(e) => {
+            error!(error = %e, "Mutation failed");
+            AdmissionResponse::invalid(e.to_string())
+        }
     };
 
     Json(resp.into_review())

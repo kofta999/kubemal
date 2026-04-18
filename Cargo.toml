@@ -16,6 +16,8 @@ json-patch = "4.1.0"
 features = "0.10.0"
 futures = "0.3.32"
 thiserror = "2.0.18"
+tracing = "0.1.41"
+tracing-subscriber = { version = "0.3.20", features = ["env-filter", "fmt"] }
 
 [lib]
 path = "src/lib/mod.rs"
