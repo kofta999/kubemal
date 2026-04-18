@@ -4,7 +4,10 @@ use crate::{
     errors::{MutationError, ValidationError},
     util,
 };
-use axum::{Json, Router, extract, routing::post};
+use axum::{
+    Json, Router, extract,
+    routing::{get, post},
+};
 use json_patch::Patch;
 use kube::{
     Client,
@@ -19,6 +22,7 @@ pub async fn create_router(client: Client) -> Router {
     Router::new()
         .route("/mutate", post(mutation_handler))
         .route("/validate", post(validation_handler))
+        .route("/healthz", get(async || "OK"))
         .with_state(state)
 }
 
