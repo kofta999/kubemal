@@ -15,3 +15,7 @@ reqwest = { version = "0.13.2", default-features = false, features = ["json", "r
 json-patch = "4.1.0"
 features = "0.10.0"
 futures = "0.3.32"
+thiserror = "2.0.18"
+
+[lib]
+path = "src/lib/mod.rs"

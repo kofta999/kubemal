@@ -38,7 +38,7 @@ pub async fn fetch_anime_details(english_title: &str) -> Option<AnimeSpec> {
     let native = media["title"]["native"].as_str();
 
     Some(AnimeSpec {
-        english_title: Some(english.or(romaji).unwrap_or(english_title).to_string()),
+        english_title: english.or(romaji).map(|s| s.to_string()),
         japanese_title: native.map(|s| s.to_string()),
         total_episodes: media["episodes"].as_i64().map(|x| x as i32),
         airing_status: match media["status"].as_str() {
