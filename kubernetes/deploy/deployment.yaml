@@ -24,7 +24,7 @@ spec:
       containers:
         - name: kubemal
           image: kofta/kubemal:latest
-          imagePullPolicy: IfNotPresent
+          imagePullPolicy: Always
           ports:
             - name: http
               containerPort: 3000
@@ -46,6 +46,7 @@ spec:
                 - ALL
           livenessProbe:
             httpGet:
+              scheme: HTTPS
               path: /healthz
               port: http
             initialDelaySeconds: 10

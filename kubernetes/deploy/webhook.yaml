@@ -12,6 +12,8 @@ webhooks:
       service:
         name: kubemal-service
         namespace: kubemal-ns
+        path: /mutate
+        port: 443
     rules:
       - operations: ["CREATE"]
         apiGroups: ["kubemal.kofta.app"]
@@ -33,6 +35,8 @@ webhooks:
       service:
         name: kubemal-service
         namespace: kubemal-ns
+        path: /validate
+        port: 443
     rules:
       - operations: ["CREATE", "UPDATE"]
         apiGroups: ["kubemal.kofta.app"]
