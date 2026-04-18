@@ -2,10 +2,15 @@ name: Build and push image to Docker Hub
 on:
   workflow_dispatch:
   push:
-    paths-ignore:
-      - kubernetes
     branches:
       - "master"
+    paths:
+      - "src/**"
+      - "Cargo.toml"
+      - "Cargo.lock"
+      - "Dockerfile"
+      - ".dockerignore"
+      - ".github/workflows/build-push.yaml"
 
 jobs:
   build-push:
