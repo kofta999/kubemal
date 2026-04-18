@@ -22,7 +22,7 @@ spec:
         seccompProfile:
           type: RuntimeDefault
       containers:
-        - name: kubemal-depl
+        - name: kubemal
           image: kofta/kubemal:latest
           imagePullPolicy: IfNotPresent
           ports:

@@ -20,8 +20,8 @@ pub async fn run() -> Result<(), AppError> {
         .expect("Failed to install rustls crypto provider");
 
     let config = RustlsConfig::from_pem_file(
-        PathBuf::from("secrets/tls.crt"),
-        PathBuf::from("secrets/tls.key"),
+        PathBuf::from("tls/tls.crt"),
+        PathBuf::from("tls/tls.key"),
     )
     .await?;
 
@@ -34,7 +34,7 @@ pub async fn run() -> Result<(), AppError> {
     info!(port = PORT, "Starting webhook server");
 
     let app = router::create_router(client).await;
-    let addr = SocketAddr::from(([127, 0, 0, 1], PORT));
+    let addr = SocketAddr::from(([0, 0, 0, 0], PORT));
 
     axum_server::bind_rustls(addr, config)
         .serve(app.into_make_service())
