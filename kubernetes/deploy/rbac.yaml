@@ -16,10 +16,10 @@ metadata:
 rules:
   - apiGroups: ["kubemal.kofta.app"]
     resources: ["animes", "watchrecords"]
-    verbs: ["get", "watch", "update", "list"]
+    verbs: ["get", "watch", "update", "list", "patch"]
   - apiGroups: ["kubemal.kofta.app"]
     resources: ["watchrecords/status"]
-    verbs: ["get", "update"]
+    verbs: ["get", "update", "patch"]
 ---
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRoleBinding

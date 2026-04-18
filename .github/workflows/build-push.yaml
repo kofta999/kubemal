@@ -2,6 +2,8 @@ name: Build and push image to Docker Hub
 on:
   workflow_dispatch:
   push:
+    paths-ignore:
+      - kubernetes
     branches:
       - "master"
 

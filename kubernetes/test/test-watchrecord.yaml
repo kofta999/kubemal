@@ -2,8 +2,6 @@ apiVersion: kubemal.kofta.app/v1
 kind: WatchRecord
 metadata:
   name: tonari-no-tenshi-watch-record
-status:
-  watchState: Dropped
 spec:
   username: kofta
   episodesWatched: 11
