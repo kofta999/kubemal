@@ -7,7 +7,7 @@ spec:
   project: default
   source:
     repoURL: https://github.com/kofta999/kubemal.git
-    targetRevision: argocd
+    targetRevision: HEAD
     path: gitops/apps
   destination:
     server: https://kubernetes.default.svc
