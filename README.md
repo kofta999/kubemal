@@ -86,40 +86,84 @@ stateDiagram-v2
     EvaluateStatusField --> Watching: spec.status is None
 ```
 
+## CI/CD and GitOps (Argo CD)
+
+- **CI image pipeline** (`.github/workflows/build-push.yaml`): on pushes to `master` (and manual dispatch), it builds and pushes:
+  - `kofta/kubemal:latest`
+  - `kofta/kubemal:<commit-sha>`
+- **GitOps image update**: the workflow updates `kubernetes/deploy/deployment.yaml` to the new SHA tag and pushes that commit.
+- **CD with App of Apps**: `gitops/app-of-apps.yaml` points Argo CD to `gitops/apps`, which manages:
+  - `cert-manager` (`gitops/apps/cert-manager.yaml`, sync-wave `-1`)
+  - `kubemal` (`gitops/apps/kubemal.yaml`, sync-wave `0`)
+
+```mermaid
+flowchart TD
+    A[Push to master / workflow_dispatch] --> B[GitHub Actions: build-push]
+    B --> C[Build Docker image]
+    C --> D[Push tags: latest + commit SHA]
+    D --> E[Commit updated image tag to kubernetes/deploy/deployment.yaml]
+    E --> F[Argo CD app-of-apps sync]
+    F --> G[cert-manager app (wave -1)]
+    F --> H[kubemal app (wave 0)]
+    H --> I[Apply kubernetes/deploy manifests]
+    I --> J[Cluster running updated KubeMAL]
+```
+
 ## Prerequisites
 
 To deploy KubeMAL to your cluster, you will need:
 
 1.  A running Kubernetes cluster.
 2.  `cert-manager` installed on your cluster (required for generating the self-signed TLS certificates used by the admission webhooks).
+3.  `Argo CD` installed (only if you use the GitOps deployment path below).
 
 ## Deployment
 
-1.  **Apply the Custom Resource Definitions (CRDs):**
+### Option A: Manual `kubectl apply`
+
+1.  **Create namespace and service account:**
 
     ```bash
-    kubectl apply -f kubernetes/crd/
+    kubectl apply -f kubernetes/deploy/identity.yaml
     ```
 
-2.  **Apply the Namespace, RBAC, and TLS configurations:**
+2.  **Apply CRDs:**
+
+    ```bash
+    kubectl apply -f kubernetes/deploy/anime.yaml
+    kubectl apply -f kubernetes/deploy/watchrecord.yaml
+    ```
+
+3.  **Apply RBAC and TLS resources:**
 
     ```bash
     kubectl apply -f kubernetes/deploy/rbac.yaml
     kubectl apply -f kubernetes/deploy/tls.yaml
     ```
 
-3.  **Deploy the KubeMAL application:**
+4.  **Deploy KubeMAL workload and service:**
 
     ```bash
     kubectl apply -f kubernetes/deploy/deployment.yaml
-    kubectl apply -f kubernetes/deploy/service.yaml
     ```
 
-4.  **Register the Webhooks:**
+5.  **Register the webhooks:**
     _Ensure the KubeMAL pods are running before applying the webhook configuration._
     ```bash
     kubectl apply -f kubernetes/deploy/webhook.yaml
     ```
+
+### Option B: GitOps with Argo CD (App of Apps)
+
+1.  Apply the root application:
+
+    ```bash
+    kubectl apply -n argocd -f gitops/app-of-apps.yaml
+    ```
+
+2.  Argo CD will sync child apps from `gitops/apps/`:
+    - `cert-manager` first (sync-wave `-1`)
+    - `kubemal` next (sync-wave `0`)
 
 ## Testing
 
