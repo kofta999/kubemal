@@ -10,7 +10,7 @@ spec:
     targetRevision: argocd
     path: kubernetes/deploy
   destination:
-    server: https://kubernetes.default.svc.cluster.local
+    server: https://kubernetes.default.svc
     namespace: kubemal
   syncPolicy:
     automated:
