@@ -29,4 +29,16 @@ jobs:
         uses: docker/build-push-action@v7
         with:
           push: true
-          tags: kofta/kubemal:latest
+          tags: |
+              kofta/kubemal:latest
+              kofta/kubemal:${{ github.sha }}
+
+      - name: Update image tag
+        run: |
+          sed -i "s|kofta/kubemal:.*|kofta/kubemal:${{ github.sha }}|" \
+            kubernetes/deploy/deployment.yaml
+          git config user.email "ci@github"
+          git config user.name "GitHub Actions"
+          git add kubernetes/deploy/deployment.yaml
+          git commit -m "chore: update image to ${{ github.sha }}"
+          git push
