@@ -4,6 +4,7 @@ metadata:
   name: anime-webook-config
   annotations:
     cert-manager.io/inject-ca-from: kubemal-ns/kubemal-cert
+    argocd.argoproj.io/sync-wave: "3"
 webhooks:
   - name: anime-webhook.kubmal.kofta.app
     admissionReviewVersions: ["v1"]
@@ -27,6 +28,7 @@ metadata:
   name: watchrecord-webook-config
   annotations:
     cert-manager.io/inject-ca-from: kubemal-ns/kubemal-cert
+    argocd.argoproj.io/sync-wave: "3"
 webhooks:
   - name: watchrecord-webhook.kubemal.kofta.app
     admissionReviewVersions: ["v1"]

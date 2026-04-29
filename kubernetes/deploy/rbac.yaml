@@ -1,18 +1,9 @@
-apiVersion: v1
-kind: Namespace
-metadata:
-  name: kubemal-ns
----
-apiVersion: v1
-kind: ServiceAccount
-metadata:
-  name: kubemal-sa
-  namespace: kubemal-ns
----
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
 metadata:
   name: kubemal-role
+  annotations:
+    argocd.argoproj.io/sync-wave: "0"
 rules:
   - apiGroups: ["kubemal.kofta.app"]
     resources: ["animes", "watchrecords"]
@@ -25,6 +16,8 @@ apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRoleBinding
 metadata:
   name: kubemal-role
+  annotations:
+    argocd.argoproj.io/sync-wave: "0"
 subjects:
   - kind: ServiceAccount
     name: kubemal-sa
