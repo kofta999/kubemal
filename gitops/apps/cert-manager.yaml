@@ -1,0 +1,20 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: cert-manager
+  namespace: argocd
+  annotations:
+    argocd.argoproj.io/sync-wave: "-1"
+spec:
+  project: default
+  source:
+    repoURL: https://charts.jetstack.io
+    targetRevision: v1.20.2
+    chart: cert-manager
+    helm:
+      parameters:
+        - InstallCRDs=true
+  syncPolicy:
+    automated: {}
+    syncOptions:
+      - CreateNamespace=true
