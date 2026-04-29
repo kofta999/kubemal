@@ -13,7 +13,8 @@ spec:
     chart: cert-manager
     helm:
       parameters:
-        - InstallCRDs=true
+        - name: installCRDs
+          value: "true"
   syncPolicy:
     automated: {}
     syncOptions:
