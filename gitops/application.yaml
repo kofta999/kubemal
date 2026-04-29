@@ -11,7 +11,7 @@ spec:
     path: kubernetes/deploy
   destination:
     server: https://kubernetes.default.svc
-    namespace: kubemal
+    namespace: kubemal-ns
   syncPolicy:
     automated:
       enabled: true
