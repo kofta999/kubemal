@@ -3,6 +3,8 @@ kind: Deployment
 metadata:
   name: kubemal-depl
   namespace: kubemal-ns
+  annotations:
+    argocd.argoproj.io/sync-wave: "3"
 spec:
   replicas: 1
   selector:
@@ -61,3 +63,22 @@ spec:
         - name: tls-secret
           secret:
             secretName: kubemal-tls
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: kubemal-service
+  namespace: kubemal-ns
+  labels:
+    app: kubemal
+  annotations:
+    argocd.argoproj.io/sync-wave: "3"
+spec:
+  type: ClusterIP
+  selector:
+    app: kubemal
+  ports:
+    - name: http
+      port: 443
+      targetPort: 3000
+      protocol: TCP

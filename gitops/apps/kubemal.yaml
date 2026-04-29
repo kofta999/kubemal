@@ -1,0 +1,21 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: kubemal
+  namespace: argocd
+  annotations:
+    argocd.argoproj.io/sync-wave: "0"
+spec:
+  project: default
+  source:
+    repoURL: https://github.com/kofta999/kubemal.git
+    targetRevision: HEAD
+    path: kubernetes/deploy
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: kubemal-ns
+  syncPolicy:
+    automated:
+      enabled: true
+      prune: true
+      selfHeal: true
