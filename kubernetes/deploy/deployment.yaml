@@ -25,7 +25,7 @@ spec:
           type: RuntimeDefault
       containers:
         - name: kubemal
-          image: kofta/kubemal:78e1bc618fad49059edae18ef33a8d597a6b75d2
+          image: kofta/kubemal:e35bf9c3d03bad8fb4fc045bed8afbf53037c458
           imagePullPolicy: Always
           ports:
             - name: http
