@@ -14,7 +14,8 @@ use kube::{
     api::DynamicObject,
     core::admission::{AdmissionRequest, AdmissionResponse, AdmissionReview, Operation},
 };
-use tracing::{error, info, warn};
+use tower_http::trace::TraceLayer;
+use tracing::{Level, error, info, warn};
 
 pub async fn create_router(client: Client) -> Router {
     let state = client;
@@ -24,6 +25,11 @@ pub async fn create_router(client: Client) -> Router {
         .route("/validate", post(validation_handler))
         .route("/healthz", get(async || "OK"))
         .with_state(state)
+        .layer(
+            TraceLayer::new_for_http()
+                .make_span_with(tower_http::trace::DefaultMakeSpan::new().level(Level::INFO))
+                .on_request(tower_http::trace::DefaultOnRequest::new().level(Level::INFO)),
+        )
 }
 
 async fn validation_handler(

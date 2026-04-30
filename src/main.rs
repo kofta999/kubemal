@@ -6,7 +6,7 @@ async fn main() -> Result<(), AppError> {
     tracing_subscriber::fmt()
         .with_env_filter(
             EnvFilter::try_from_default_env()
-                .unwrap_or_else(|_| EnvFilter::new("kubemal=info,kube=info")),
+                .unwrap_or_else(|_| EnvFilter::new("kubemal=info,kube=info,tower_http=debug")),
         )
         .with_target(false)
         .compact()

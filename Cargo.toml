@@ -19,6 +19,7 @@ thiserror = "2.0.18"
 tracing = "0.1.41"
 tracing-subscriber = { version = "0.3.20", features = ["env-filter", "fmt"] }
 axum-server = { version = "0.8.0", features = ["tls-rustls"] }
+tower-http = { version = "0.6.8", features = ["trace"] }
 
 [lib]
 path = "src/lib/mod.rs"
