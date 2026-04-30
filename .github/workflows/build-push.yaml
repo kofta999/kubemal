@@ -32,8 +32,10 @@ jobs:
         with:
           push: true
           tags: |
-              kofta/kubemal:latest
-              kofta/kubemal:${{ github.sha }}
+            kofta/kubemal:latest
+            kofta/kubemal:${{ github.sha }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
 
       - name: Update image tag
         run: |
