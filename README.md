@@ -103,8 +103,8 @@ flowchart TD
     C --> D[Push tags: latest + commit SHA]
     D --> E[Commit updated image tag to kubernetes/deploy/deployment.yaml]
     E --> F[Argo CD app-of-apps sync]
-    F --> G[cert-manager app (wave -1)]
-    F --> H[kubemal app (wave 0)]
+    F --> G["cert-manager app (wave -1)"]
+    F --> H["kubemal app (wave 0)"]
     H --> I[Apply kubernetes/deploy manifests]
     I --> J[Cluster running updated KubeMAL]
 ```
