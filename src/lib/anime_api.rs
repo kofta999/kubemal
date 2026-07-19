@@ -18,13 +18,14 @@ query ($search: String) {
 
 pub async fn fetch_anime_details(english_title: &str) -> Option<AnimeSpec> {
     let client = reqwest::Client::new();
+    let clean_title = english_title.replace("-", " ").replace("_", " ");
     let json = client
         .post(ANILIST_URL)
         .header("Content-Type", "application/json")
         .header("Accept", "application/json")
         .json(&serde_json::json!({
             "query": ANILIST_MEDIA_QUERY,
-            "variables": { "search": english_title }
+            "variables": { "search": clean_title }
         }))
         .send()
         .await
